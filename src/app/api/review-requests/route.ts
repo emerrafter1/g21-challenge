@@ -9,6 +9,7 @@ export function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status");
+    const documentTitle = searchParams.get("documentTitle")
 
     let filteredData = SAMPLE_REVIEW_REQUESTS;
 
@@ -17,6 +18,12 @@ export function GET(request: NextRequest) {
         (item) => item.status.toLowerCase() === statusFilter.toLowerCase()
       );
     }
+
+    if (documentTitle) {
+        filteredData = filteredData.filter((item) =>
+          item.documentTitle.toLowerCase().includes(documentTitle.toLowerCase())
+        );
+      }
 
     return NextResponse.json(filteredData);
   } catch (err) {
