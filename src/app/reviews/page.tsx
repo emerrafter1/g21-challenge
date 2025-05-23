@@ -10,21 +10,52 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { ReviewRequest } from "@/types";
 
 export default function ReviewsPage() {
-  const [reviewRequestData, setReviewRequestData] = useState<any[]>([]);
+  const [reviewRequestData, setReviewRequestData] = useState<ReviewRequest[]>([]);
+  const [allReviewRequests, setAllReviewRequests] = useState<ReviewRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState("");
   const [documentSearchTerm, setDocumentSearchTerm] = useState("");
+  const [documentType, setDocumentType] = useState("");
+  const [clientName, setClientName] = useState("");
+
+  useEffect(() => {
+    fetch("/api/review-requests")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch dropdown data");
+        return res.json();
+      })
+      .then((data) => {
+        setAllReviewRequests(data);
+      })
+      .catch((err) => {
+        console.error("Dropdown load error:", err.message);
+      });
+  }, []);
+
+  const distinctDocumentTypes = Array.from(
+    new Set(allReviewRequests.map((item) => item.documentType))
+  );
+
+  const distinctClientNames = Array.from(
+    new Set(allReviewRequests.map((item) => item.clientName))
+  );
 
   useEffect(() => {
     setIsLoading(true);
 
     const params = new URLSearchParams();
 
-    if (requestStatus) params.append("status", requestStatus);
+    if (requestStatus && requestStatus != "all")
+      params.append("status", requestStatus);
     if (documentSearchTerm) params.append("documentTitle", documentSearchTerm);
+    if (documentType && documentType != "all")
+      params.append("documentType", documentType);
+    if (clientName && clientName != "all")
+      params.append("clientName", clientName);
 
     const url = `/api/review-requests?${params.toString()}`;
 
@@ -42,7 +73,7 @@ export default function ReviewsPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [requestStatus, documentSearchTerm]);
+  }, [requestStatus, documentSearchTerm, documentType, clientName]);
 
   return (
     <main className="container mx-auto p-4">
@@ -66,23 +97,60 @@ export default function ReviewsPage() {
           />
         </div>
 
-        <div className="mb-4 ">
-          <label htmlFor="statusFilter" className="mr-2 font-medium">
-            Filter by status:
-          </label>
-          <Select value={requestStatus} onValueChange={setRequestStatus}>
-            <SelectTrigger>
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in review">In Review</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-4">
+          <div className="mb-4 flex items-center ">
+            <label className="mr-2 font-medium">Status:</label>
+            <Select value={requestStatus} onValueChange={setRequestStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in review">In Review</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
+          <div className="mb-4 flex items-center ">
+            <label className="mr-2 font-medium">Document Type:</label>
+            <Select value={documentType} onValueChange={setDocumentType}>
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                {distinctDocumentTypes.map((item, index) => {
+                  return (
+                    <SelectItem key={index} value={item}>
+                      {item}
+                    </SelectItem>
+                  );
+                })}
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-4 flex items-center ">
+            <label className="mr-2 font-medium">Client Name:</label>
+            <Select value={clientName} onValueChange={setClientName}>
+              <SelectTrigger>
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {distinctClientNames.map((item, index) => {
+                  return (
+                    <SelectItem key={index} value={item}>
+                      {item}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div>
           {isLoading && (
             <p className="text-gray-600">Loading review requests...</p>
