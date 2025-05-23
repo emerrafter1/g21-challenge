@@ -3,20 +3,35 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"; 
 
 export default function ReviewsPage() {
   const [reviewRequestData, setReviewRequestData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requestStatus, setRequestStatus] = useState("");
 
   useEffect(() => {
-    fetch("/api/review-requests")
+    setIsLoading(true);
+
+    const url = requestStatus
+      ? `/api/review-requests?status=${encodeURIComponent(requestStatus)}`
+      : "/api/review-requests";
+
+    console.log(url);
+
+    fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch review requests");
         return res.json();
       })
       .then((data) => {
-        console.log(data[0].id);
         setReviewRequestData(data);
       })
       .catch((err) => {
@@ -25,7 +40,7 @@ export default function ReviewsPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [requestStatus]);
 
   return (
     <main className="container mx-auto p-4">
@@ -38,14 +53,24 @@ export default function ReviewsPage() {
 
       <div>
         <h2 className="text-xl font-semibold mb-4">All Review Requests</h2>
-        {/* TODO: Add status filter component here */}
-        <div className="mb-4 bg-yellow-100 border-l-4 border-yellow-500 p-4">
-          <p className="text-yellow-700">
-            Replace this placeholder with your status filter component.
-          </p>
+
+        <div className="mb-4 ">
+          <label htmlFor="statusFilter" className="mr-2 font-medium">
+            Filter by status:
+          </label>
+          <Select value={requestStatus} onValueChange={setRequestStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in review">In Review</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* TODO: Add ReviewRequestTable component here */}
         <div>
           {isLoading && (
             <p className="text-gray-600">Loading review requests...</p>
@@ -53,7 +78,7 @@ export default function ReviewsPage() {
           {error && <p className="text-red-500">Error: {error}</p>}
 
           {!isLoading && !error && (
-            <div className="bg-white border p-4 rounded-md">
+            <div className="bg-white border p-4 rounded-md overflow-x-auto">
               <table className="w-full text-sm text-left border-collapse">
                 <thead className="border-b font-semibold">
                   <tr>
@@ -78,9 +103,12 @@ export default function ReviewsPage() {
                       <td className="p-2">{r.status}</td>
                       <td className="p-2">{r.createdAt}</td>
                       <td className="p-2">
-          
-                        <Button className="m-1" variant="outline">View</Button>{" "}
-                        <Button className="m-1" variant="outline">Edit</Button>
+                        <Button className="m-1" variant="outline">
+                          View
+                        </Button>{" "}
+                        <Button className="m-1" variant="outline">
+                          Edit
+                        </Button>
                       </td>
                     </tr>
                   ))}

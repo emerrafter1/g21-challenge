@@ -1,14 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { SAMPLE_REVIEW_REQUESTS } from '@/data/sample-data';
+import { NextRequest, NextResponse } from "next/server";
+import { SAMPLE_REVIEW_REQUESTS } from "@/data/sample-data";
 
-export function GET() {
+export function GET(request: NextRequest) {
   try {
     if (!Array.isArray(SAMPLE_REVIEW_REQUESTS)) {
-      throw new Error('Invalid review requests data');
+      throw new Error("Invalid review requests data");
     }
-    return NextResponse.json(SAMPLE_REVIEW_REQUESTS);
+
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status");
+
+    let filteredData = SAMPLE_REVIEW_REQUESTS;
+
+    if (statusFilter && statusFilter!="all") {
+      filteredData = filteredData.filter(
+        (item) => item.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    return NextResponse.json(filteredData);
   } catch (err) {
-    return NextResponse.json({ error: 'Failed to load review requests' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to load review requests" },
+      { status: 500 }
+    );
   }
 }
 
@@ -16,23 +31,33 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const required = ['clientName', 'documentTitle', 'documentType', 'priority', 'dueDate'];
+    const required = [
+      "clientName",
+      "documentTitle",
+      "documentType",
+      "priority",
+      "dueDate",
+    ];
     for (const field of required) {
       if (!body[field]) {
-        return NextResponse.json({ error: `Bad Request: Missing field: ${field}` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Bad Request: Missing field: ${field}` },
+          { status: 400 }
+        );
       }
     }
 
-    let newId = String(SAMPLE_REVIEW_REQUESTS.length + 1)
+    let newId = String(SAMPLE_REVIEW_REQUESTS.length + 1);
 
-    const newRequest = { id: newId,
+    const newRequest = {
+      id: newId,
       ...body,
-      status: 'Pending',
+      status: "Pending",
       createdAt: new Date().toISOString().slice(0, 10),
     };
 
     return NextResponse.json(newRequest, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 500 });
+    return NextResponse.json({ error: "Invalid request" }, { status: 500 });
   }
 }
