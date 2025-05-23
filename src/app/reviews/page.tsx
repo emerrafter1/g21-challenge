@@ -9,22 +9,24 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@/components/ui/select"; 
+} from "@/components/ui/select";
 
 export default function ReviewsPage() {
   const [reviewRequestData, setReviewRequestData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState("");
+  const [documentSearchTerm, setDocumentSearchTerm] = useState("");
 
   useEffect(() => {
     setIsLoading(true);
 
-    const url = requestStatus
-      ? `/api/review-requests?status=${encodeURIComponent(requestStatus)}`
-      : "/api/review-requests";
+    const params = new URLSearchParams();
 
-    console.log(url);
+    if (requestStatus) params.append("status", requestStatus);
+    if (documentSearchTerm) params.append("documentTitle", documentSearchTerm);
+
+    const url = `/api/review-requests?${params.toString()}`;
 
     fetch(url)
       .then((res) => {
@@ -40,7 +42,7 @@ export default function ReviewsPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [requestStatus]);
+  }, [requestStatus, documentSearchTerm]);
 
   return (
     <main className="container mx-auto p-4">
@@ -53,6 +55,16 @@ export default function ReviewsPage() {
 
       <div>
         <h2 className="text-xl font-semibold mb-4">All Review Requests</h2>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="search"
+            value={documentSearchTerm}
+            onChange={(e) => setDocumentSearchTerm(e.target.value)}
+            placeholder="Search documents..."
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
 
         <div className="mb-4 ">
           <label htmlFor="statusFilter" className="mr-2 font-medium">
@@ -93,25 +105,34 @@ export default function ReviewsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reviewRequestData.map((r) => (
-                    <tr key={r.id} className="border-b">
-                      <td className="p-2">{r.clientName}</td>
-                      <td className="p-2">{r.documentTitle}</td>
-                      <td className="p-2">{r.documentType}</td>
-                      <td className="p-2">{r.priority}</td>
-                      <td className="p-2">{r.dueDate}</td>
-                      <td className="p-2">{r.status}</td>
-                      <td className="p-2">{r.createdAt}</td>
-                      <td className="p-2">
-                        <Button className="m-1" variant="outline">
-                          View
-                        </Button>{" "}
-                        <Button className="m-1" variant="outline">
-                          Edit
-                        </Button>
+                  {reviewRequestData.length > 0 ? (
+                    reviewRequestData.map((r) => (
+                      <tr key={r.id} className="border-b">
+                        <td className="p-2">{r.clientName}</td>
+                        <td className="p-2">{r.documentTitle}</td>
+                        <td className="p-2">{r.documentType}</td>
+                        <td className="p-2">{r.priority}</td>
+                        <td className="p-2">{r.dueDate}</td>
+                        <td className="p-2">{r.status}</td>
+                        <td className="p-2">{r.createdAt}</td>
+                        <td className="p-2">
+                          <Button className="m-1" variant="outline">
+                            View
+                          </Button>
+                          <Button className="m-1" variant="outline">
+                            Edit
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center">
+                        Your search <strong>{documentSearchTerm}</strong> did
+                        not match any review requests.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
