@@ -10,10 +10,12 @@ export function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status");
     const documentTitle = searchParams.get("documentTitle")
+    const documentType = searchParams.get("documentType")
+    const clientName = searchParams.get("clientName")
 
     let filteredData = SAMPLE_REVIEW_REQUESTS;
 
-    if (statusFilter && statusFilter!="all") {
+    if (statusFilter) {
       filteredData = filteredData.filter(
         (item) => item.status.toLowerCase() === statusFilter.toLowerCase()
       );
@@ -22,6 +24,18 @@ export function GET(request: NextRequest) {
     if (documentTitle) {
         filteredData = filteredData.filter((item) =>
           item.documentTitle.toLowerCase().includes(documentTitle.toLowerCase())
+        );
+      }
+
+      if (documentType) {
+        filteredData = filteredData.filter(
+          (item) => item.documentType.toLowerCase() === documentType.toLowerCase()
+        );
+      }
+
+      if (clientName) {
+        filteredData = filteredData.filter(
+          (item) => item.clientName.toLowerCase() === clientName.toLowerCase()
         );
       }
 
