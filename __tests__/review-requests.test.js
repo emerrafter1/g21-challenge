@@ -1,9 +1,17 @@
 const { POST } = require("@/app/api/review-requests/route");
 const { GET } = require("@/app/api/review-requests/route");
 
+beforeEach(() => {
+  jest.resetModules();
+});
+
 describe("GET /api/review-requests", () => {
   it("returns 200 and an array of review requests", async () => {
-    const response = GET();
+    const mockRequest = {
+      url: "http://localhost/api/review-requests",
+    };
+
+    const response = await GET(mockRequest);
     const result = await response.json();
 
     expect(response.status).toBe(200);
@@ -30,19 +38,108 @@ describe("GET /api/review-requests", () => {
   });
 
   it("returns 500 if SAMPLE_REVIEW_REQUESTS is not an array", async () => {
-    jest.isolateModules(() => {
+    await jest.isolateModulesAsync(async () => {
       jest.mock("@/data/sample-data", () => ({
         SAMPLE_REVIEW_REQUESTS: null,
       }));
 
       const { GET: FaultyGET } = require("@/app/api/review-requests/route");
-      const response = FaultyGET();
 
-      return response.json().then((result) => {
-        expect(response.status).toBe(500);
-        expect(result).toHaveProperty("error");
-        expect(result.error).toMatch(/failed to load/i);
-      });
+      const mockRequest = {
+        url: "http://localhost/api/review-requests",
+      };
+
+      const response = await FaultyGET(mockRequest);
+      const result = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(result).toHaveProperty("error");
+      expect(result.error).toMatch(/failed to load/i);
+    });
+  });
+
+  it("returns only review requests matching the given priority search param", async () => {
+    const mockRequest = {
+      url: "http://localhost/api/review-requests?priority=High",
+    };
+
+    const response = await GET(mockRequest);
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(2);
+
+    result.forEach((entry) => {
+      expect(entry.priority).toBe("High");
+    });
+  });
+
+  it("returns only review requests matching the given status param", async () => {
+    const mockRequest = {
+      url: "http://localhost/api/review-requests?status=pending",
+    };
+
+    const response = await GET(mockRequest);
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(2);
+
+    result.forEach((entry) => {
+      expect(entry.status).toBe("Pending");
+    });
+  });
+
+  it("returns only review requests matching the given documentType param", async () => {
+    const mockRequest = {
+      url: "http://localhost/api/review-requests?documentType=Financial%20Promotion",
+    };
+
+    const response = await GET(mockRequest);
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(2);
+
+    result.forEach((entry) => {
+      expect(entry.documentType).toBe("Financial Promotion");
+    });
+  });
+
+  it("returns only review requests matching the given clientName param", async () => {
+    const mockRequest = {
+      url: "http://localhost/api/review-requests?clientName=Acme%20Financial",
+    };
+
+    const response = await GET(mockRequest);
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(1);
+
+    result.forEach((entry) => {
+      expect(entry.clientName).toBe("Acme Financial");
+    });
+  });
+
+  it("returns only review requests matching the given documentTitle param", async () => {
+    const mockRequest = {
+      url: "http://localhost/api/review-requests?documentTitle=ess",
+    };
+
+    const response = await GET(mockRequest);
+    const result = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(2);
+
+    result.forEach((entry) => {
+      expect(entry.documentTitle).toContain("ess");
     });
   });
 });
@@ -78,7 +175,6 @@ describe("POST /api/review-requests", () => {
       dueDate: "2025-04-20",
       createdAt: today,
     });
-
   });
 
   it("returns 400 for missing fields", async () => {
