@@ -1,4 +1,3 @@
-read me 
 
 ## Set up instructions
 
@@ -56,8 +55,7 @@ In this project, I used in-memory data via the `SAMPLE_REVIEW_REQUESTS` array, w
 
 ### Filtering
 
-Filters for:
- - Status, Client Name, Document Type, Priority
+- Filters for: Status, Client Name, Document Type, Priority
 
 - A `useEffect` watches the state of all filters.
 - When any filter changes, a new query string is built using `URLSearchParams`.
