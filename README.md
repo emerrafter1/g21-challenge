@@ -1,149 +1,157 @@
-# G21 Portal Coding Challenge
+read me 
 
-Welcome to the G21 Portal Developer Coding Challenge! This repository contains everything you need to get started with the challenge.
+## Set up instructions
 
-## Overview
+### Clone the repo:
 
-In this challenge, you will build a small module for the G21 Portal that helps compliance officers manage document review requests.
+git clone `https://github.com/emerrafter1/g21-challenge.git`
+cd `g21-coding-challenge`
 
-Your task is to create:
+### Install dependencies:
 
-1. A form to submit new document review requests
-2. A table to display existing review requests
-3. Basic filtering functionality for the table
+`npm install`
 
-## Challenge Requirements
+### Start the development server:
 
-### Technical Stack
+`npm run dev`
 
-- NextJS (App Router)
-- React
-- TypeScript
-- Tailwind CSS for styling
-- shadcn/ui for components (already set up)
 
-### Data Fetching
+## Scripts
 
-For this challenge, you'll need to implement basic data fetching using NextJS:
+- `npm run dev` – start dev server
+- `npm run build` – create production build
+- `npm start` – run production server
+- `npm test` – run unit tests
 
-1. Create a simple API route at `/api/review-requests` that:
+### Access the application
 
-   - Returns the list of sample review requests (GET)
-   - Accepts new review requests (POST)
+Open `http://localhost:3000` in your browser.
 
-2. Implement data fetching in your components using one of these methods:
+## Approach
 
-   - Client-side: Using `fetch` with React state
-   - Server-side: Using NextJS Server Components
+### API Routes
 
-3. Add basic loading indicators when data is being fetched
+- `/api/review-requests` handles `GET` and `POST` requests.
+- `GET`: Filters review requests based on query parameters (`status`, `documentTitle`, `documentType`, `clientName`, `priority`).
+- `POST`: Accepts validated form data, appends `status: "Pending"` and the current date, and returns the new request object.
 
-### Features
+In this project, I used in-memory data via the `SAMPLE_REVIEW_REQUESTS` array, which meant all data was temporary and reset on reload. I didn’t persist changes, submitting or editing data updated local state only, nothing was saved to a database or file. This approach worked for demo purposes but made the app stateless and edits non-permanent.
 
-#### 1. Document Review Request Form
+### Pages and Routing
 
-Create a form on its own dedicated page that collects the following information:
+- **Submit Page** (`/submit`): A form for creating new review requests.
+- **Reviews Page** (`/reviews`): Displays all requests in a sortable, filterable table.
+- Uses the **App Router** with client and server components.
 
-- Client name (dropdown with at least 3 dummy options)
-- Document title (text input)
-- Document type (dropdown: "Financial Promotion", "DDQ Response", "Risk Assessment")
-- Priority (dropdown: "Low", "Medium", "High")
-- Due date (date picker)
-- Notes (text area)
-- File upload (simulate only, no actual upload needed)
+### State and Validation
 
-#### 2. Review Requests Table
+- React `useState` manages form fields, filter selections, table state, and UI feedback.
+- `zod` handles client-side validation of form inputs before submission.
+- File uploads are simulated but not stored.
 
-Create a table on its own dedicated page displaying submitted review requests with the following:
+### In-Memory Data
+- Sample data is stored in a local file (SAMPLE_REVIEW_REQUESTS), imported by the API.
 
-- All fields from the form except Notes
-- Status column (automatically set to "Pending" for new submissions)
-- Created date (automatically set to submission time)
-- Actions column with "View" and "Edit" buttons (these don't need to be functional)
+- new entries are appended during POST requests (simulation only, no real database).
 
-#### 3. Filtering
+### Filtering
 
-Add a simple filter dropdown to the table:
+Filters for:
+ - Status, Client Name, Document Type, Priority
 
-- Filter by status (dropdown with options: "All", "Pending", "In Review", "Completed")
+- A `useEffect` watches the state of all filters.
+- When any filter changes, a new query string is built using `URLSearchParams`.
+- That query string is sent to `/api/review-requests`, triggering a server-side filter.
+- The server returns only the data that matches the selected filter values..
 
-### State Management
+### Document Search
 
-- Use simple React state to manage form data and loading states
-- Store sample data in a file that your API route will use
-- Pre-populate the data with 5-7 sample entries
+#### How It Works (Client-Side)
 
-## Bonus Points (completely optional)
+- The input is controlled by `useState(documentSearchTerm)`.
+- Every time you type, it updates the `documentSearchTerm` state.:
+- On every change to `documentSearchTerm`, a `useEffect` runs and:
+ - Trims whitespace from the search term.
+ - Appends `documentTitle` as a query parameter to the API URL.
+ - Makes a request to `/api/review-requests?documentTitle=...`.
 
-Choose one or more if you have extra time:
+#### How It Works (Server-Side)
 
-- Form validation using Zod
-- Add more filters (client name, document type)
-- Sorting functionality for the table
-- Status change capability
-- Simple responsive design
-- Add a search input for document titles
-- Enhanced styling and UI improvements for the pages
-- Dockerize the project (create a Dockerfile and docker-compose.yml)
+- In the `GET` handler, the API extracts the search term: `const documentTitle = searchParams.get("documentTitle")?.trim().toLowerCase();`
+- It filters SAMPLE_REVIEW_REQUESTS using:
+`item.documentTitle.toLowerCase().includes(documentTitle)`
+- This is a partial match, not exact. Any entry that contains the search term will be returned.
 
-## Getting Started
+#### Server-Side Filtering
 
-1. Clone this repository
-2. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   # or
-   pnpm install
-   ```
-3. Start the development server:
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+- The API route reads the `documentTitle` parameter.
+- It runs a `toLowerCase().includes(...)` check on all document titles in the sample data.
+- Only requests with matching titles are returned to the client.
 
-## Project Structure
+### Table Sorting Logic
 
-The starter repository contains:
+Table supports column sorting (e.g. by priority, due date). Sorting method varies depending on the column:
 
-- TypeScript types for review requests
-- Sample data for clients and review requests
-- Basic project structure
-- Several pre-installed shadcn/ui components (Button, Select, Badge)
-- Helper utilities
+- A copy of the `data` array is made so the original stays unchanged.
+- Sorting uses the selected column (`sortColumn`), or `"createdAt"` by default.
+- For each row, values (`valA`, `valB`) from the target column are compared.
+- If either value is missing, that comparison is skipped.
 
-You are encouraged to install additional shadcn/ui components as needed for your implementation. For example, you might want to add Input, Label, Table, Form, or Card components depending on your approach. You can install additional components using:
+### Sorting by Column Type
 
-```bash
-npx shadcn-ui@latest add <component-name>
-```
+**Dates (`dueDate`, `createdAt`)**
+- Values are converted to timestamps using `new Date().getTime()`.
+- Sorted numerically by date in ascending or descending order.
 
-## Styling
+**Priority**
+- Uses a lookup object:
+`const priorityOrder = { High: 3, Medium: 2, Low: 1 };`
+- Priority strings are mapped to numbers.
+- Allows logical sorting from high to low or vice versa.
 
-Functionality is the priority for this challenge. Simple styling using the provided shadcn/ui components will suffice. Only focus on enhanced styling and UI improvements if you have extra time, as the main focus is on implementing the core functionality correctly.
+**Status**
+- Uses another lookup object:
+`const statusOrder = { Completed: 3, "In Review": 2, Pending: 1 };`
+- Status strings are mapped to numbers to sort by.
 
-## Submission Guidelines
+**Text Fields (`clientName`, `documentTitle`, `documentType`)**
+- Converted to lowercase.
+- Compared alphabetically using `localeCompare()`.
 
-- Complete the challenge within 2 hours
-- Create a new repository with your solution
-- Provide a README with:
-  - Setup instructions
-  - Brief explanation of your approach
-  - Any challenges you faced
-  - What you would improve with more time
+### UI Components
 
-## Evaluation Criteria
+Uses `shadcn/ui` components for:
+- Form inputs and dropdowns (`Select`, `Input`, `Button`)
 
-- Basic functionality of the form and table
-- Implementation of a simple API route
-- Code organization
-- TypeScript usage
-- UI design with shadcn components
-- Component structure and organization
+### Testing
 
-Good luck! We're excited to see what you build.
+A set of unit tests written with Jest to test the GET and POST API handlers from the review-requests route. It mocks requests and directly calls the handler functions to verify expected behavior.
+
+The GET tests check that review requests are returned correctly, including when query parameters are used for filtering by status, priority, document type, title, or client name. It also verifies error handling when the data source is invalid.
+
+The POST tests check that a new review request is accepted and that required fields are validated. It confirms that the server assigns default values like createdAt and status.
+
+## Challenges faced
+
+### New Tools
+
+This was my first time using Next.js. I had to adjust to its routing model and the mix of client/server execution. I spent time understanding when to use server components versus client components, and how data fetching differs from traditional Express setups which I had used previously.
+
+Working without a database meant managing state in memory. This made it harder to simulate real-world behavior, especially for things like editing or persisting data. I worked around it by updating local state and re-fetching data on the client side to reflect changes.
+
+I hadn’t used Docker before, so I followed a few online tutorials to create this simple container setup. It installs dependencies, builds the app, and runs the server on port 3000. This makes it easier to run the project without needing to configure everything on my machine.
+
+## What would you improve on with more time
+
+### Use a real database
+
+If I had more time, I’d connect the app to a real database like PostgreSQL to handle storage properly. Instead of using in-memory sample data, I’d create a structured table for review requests. That would let me store submitted data, update statuses, and fetch filtered results reliably across sessions. It would make the app stateful and usable beyond just a demo.
+
+### Build a patch endpoint for status editing
+I’d also add a real PATCH endpoint for review requests to handle status updates, instead of the in-memory approach I used here. For demo purposes, I kept everything in local state without persistence, but in a full version, updates would be saved to the database.
+
+### Include E2E tests
+I’d also add some end-to-end tests to cover front-end behavior and user flows. In this project, I only included a few limited back-end tests using Jest. Tools like Cypress or Playwright would help automate real user interactions and confirm that filtering, submitting, and editing review requests all work as expected.
+
+### UI and Form UX Improvements
+On the front end, I’d spend more time on styling to improve spacing, visual hierarchy, and responsiveness, especially for smaller screens. The current layout works but could be more polished and easier to scan. I’d also improve form validation by adding inline error messages and clearer user feedback. Right now, errors are handled in the code but not always surfaced to the user in a helpful way. Disabling the submit button when fields are invalid would also improve usability.
