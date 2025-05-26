@@ -20,7 +20,9 @@ export default function ReviewsPage() {
   const [documentSearchTerm, setDocumentSearchTerm] = useState("");
   const [documentType, setDocumentType] = useState("");
   const [clientName, setClientName] = useState("");
-  const statuses = [ "pending",  "in review","completed"]
+  const [priority, setPriority] = useState("");
+  const statuses = ["pending", "in review", "completed"];
+  const priorities = ["High", "Medium", "Low"];
 
   useEffect(() => {
     fetch("/api/review-requests")
@@ -44,21 +46,21 @@ export default function ReviewsPage() {
     new Set(allReviewRequests.map((item) => item.clientName))
   );
 
-  const trimmedTitle = documentSearchTerm.trim();
-
   useEffect(() => {
     setIsLoading(true);
 
     const params = new URLSearchParams();
+    const trimmedTitle = documentSearchTerm.trim();
 
     if (requestStatus && requestStatus != "all")
       params.append("status", requestStatus);
     if (trimmedTitle) params.append("documentTitle", trimmedTitle);
-    
+
     if (documentType && documentType != "all")
       params.append("documentType", documentType);
     if (clientName && clientName != "all")
       params.append("clientName", clientName);
+    if (priority && priority != "all") params.append("priority", priority);
 
     const url = `/api/review-requests?${params.toString()}`;
 
@@ -76,7 +78,7 @@ export default function ReviewsPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [requestStatus, documentSearchTerm, documentType, clientName]);
+  }, [requestStatus, documentSearchTerm, documentType, clientName, priority]);
 
   return (
     <main className="container mx-auto p-4">
@@ -101,12 +103,11 @@ export default function ReviewsPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-4">
-
           <FilterDropdown
-            label="Status"
-            value={requestStatus}
-            options={statuses}
-            onChange={setRequestStatus}
+            label="Client Name"
+            value={clientName}
+            options={distinctClientNames}
+            onChange={setClientName}
           />
 
           <FilterDropdown
@@ -117,10 +118,17 @@ export default function ReviewsPage() {
           />
 
           <FilterDropdown
-            label="Client Name"
-            value={clientName}
-            options={distinctClientNames}
-            onChange={setClientName}
+            label="Priority"
+            value={priority}
+            options={priorities}
+            onChange={setPriority}
+          />
+
+          <FilterDropdown
+            label="Status"
+            value={requestStatus}
+            options={statuses}
+            onChange={setRequestStatus}
           />
         </div>
         <ReviewRequestsTable
