@@ -1,5 +1,14 @@
-import { ReviewRequest } from "@/types";
+import { useState } from "react";
+import { ReviewRequest, Status } from "@/types";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { toTitleCase } from "@/lib/utils";
 
 interface ReviewRequestsTableProps {
   data: ReviewRequest[];
@@ -9,11 +18,17 @@ interface ReviewRequestsTableProps {
 }
 
 export default function ReviewRequestsTable({
-  data,
+  data: initialData,
   searchTerm,
   isLoading,
   error,
 }: ReviewRequestsTableProps) {
+  const [data, setData] = useState<ReviewRequest[]>([...initialData]);
+  const [editRowId, setEditRowId] = useState<string | null>(null);
+  const [editedStatus, setEditedStatus] = useState<Status>("Pending");
+
+  const statuses: Status[] = ["Pending", "In Review", "Completed"];
+
   if (isLoading) {
     return <p className="text-gray-600">Loading review requests...</p>;
   }
@@ -21,6 +36,33 @@ export default function ReviewRequestsTable({
   if (error) {
     return <p className="text-red-500">Error: {error}</p>;
   }
+
+  function handleEditClick(id: string, currentStatus: Status) {
+    setEditRowId(id);
+    setEditedStatus(currentStatus);
+  }
+
+  function handleStatusChange(value: Status) {
+    setEditedStatus(value);
+  }
+
+  function handleSave(id: string) {
+    const updated = data.map((item) =>
+      item.id === id ? { ...item, status: editedStatus } : item
+    );
+    setData(updated);
+    setEditRowId(null);
+  }
+
+  function handleCancel() {
+    setEditRowId(null);
+  }
+
+  const filteredData = data.filter(
+    (r) =>
+      r.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.documentTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="bg-white border p-4 rounded-md overflow-x-auto">
@@ -38,30 +80,78 @@ export default function ReviewRequestsTable({
           </tr>
         </thead>
         <tbody>
-          {data.length > 0 ? (
-            data.map((r) => (
+          {filteredData.length > 0 ? (
+            filteredData.map((r) => (
               <tr key={r.id} className="border-b">
                 <td className="p-2">{r.clientName}</td>
                 <td className="p-2">{r.documentTitle}</td>
                 <td className="p-2">{r.documentType}</td>
                 <td className="p-2">{r.priority}</td>
-                <td className="p-2">{r.dueDate}</td>
-                <td className="p-2">{r.status}</td>
-                <td className="p-2">{r.createdAt}</td>
+                <td className="p-2">
+                  {new Date(r.dueDate).toLocaleDateString()}
+                </td>
+                <td className="p-2">
+                  {editRowId === r.id ? (
+                    <Select
+                      value={editedStatus}
+                      onValueChange={handleStatusChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statuses.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {toTitleCase(item)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    toTitleCase(r.status)
+                  )}
+                </td>
+                <td className="p-2">
+                  {new Date(r.createdAt).toLocaleDateString()}
+                </td>
                 <td className="p-2">
                   <Button className="m-1" variant="outline">
                     View
                   </Button>
-                  <Button className="m-1" variant="outline">
-                    Edit
-                  </Button>
+                  {editRowId === r.id ? (
+                    <>
+                      <Button
+                        className="m-1"
+                        variant="outline"
+                        onClick={() => handleSave(r.id)}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        className="m-1"
+                        variant="outline"
+                        onClick={handleCancel}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      className="m-1"
+                      variant="outline"
+                      onClick={() => handleEditClick(r.id, r.status)}
+                    >
+                      Edit
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))
           ) : (
             <tr>
               <td colSpan={8} className="p-8 text-center">
-                Your search <strong>{searchTerm}</strong> did not match any review requests.
+                Your search <strong>{searchTerm}</strong> did not match any
+                review requests.
               </td>
             </tr>
           )}
