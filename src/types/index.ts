@@ -16,3 +16,13 @@ export interface ReviewRequest {
   status: Status;
   createdAt: string;
 }
+
+export type FormData = {
+  clientName: string;
+  documentTitle: string;
+  documentType: string;
+  priority: string;
+  dueDate: string;
+  notes: string;
+  file: File | null;
+};

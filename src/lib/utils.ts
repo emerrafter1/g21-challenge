@@ -53,3 +53,15 @@ export function getStatusColor(status: string): string {
       return "bg-gray-100 text-gray-800 hover:bg-gray-100";
   }
 }
+
+/**
+ * Converts a string to Title Case
+ */
+
+export function toTitleCase(str: string){
+  return str
+  .toLowerCase()
+  .split(" ")
+  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+  .join(" ");
+}

@@ -3,28 +3,66 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select"; 
+import { ReviewRequest } from "@/types";
+import ReviewRequestsTable from "@/components/ui/ReviewRequestsTable";
+import FilterDropdown from "@/components/ui/FilterDropdown";
 
 export default function ReviewsPage() {
-  const [reviewRequestData, setReviewRequestData] = useState<any[]>([]);
+  const [reviewRequestData, setReviewRequestData] = useState<ReviewRequest[]>(
+    []
+  );
+  const [allReviewRequests, setAllReviewRequests] = useState<ReviewRequest[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requestStatus, setRequestStatus] = useState("");
+  const [documentSearchTerm, setDocumentSearchTerm] = useState("");
+  const [documentType, setDocumentType] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [priority, setPriority] = useState("");
+  const statuses = ["pending", "in review", "completed"];
+  const priorities = ["High", "Medium", "Low"];
+
+  useEffect(() => {
+    fetch("/api/review-requests")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch dropdown data");
+        return res.json();
+      })
+      .then((data) => {
+        setAllReviewRequests(data);
+      })
+      .catch((err) => {
+        console.error("Dropdown load error:", err.message);
+      });
+  }, []);
+
+  const distinctDocumentTypes = Array.from(
+    new Set(allReviewRequests.map((item) => item.documentType))
+  );
+
+  const distinctClientNames = Array.from(
+    new Set(allReviewRequests.map((item) => item.clientName))
+  );
 
   useEffect(() => {
     setIsLoading(true);
 
-    const url = requestStatus
-      ? `/api/review-requests?status=${encodeURIComponent(requestStatus)}`
-      : "/api/review-requests";
+    const params = new URLSearchParams();
+    const trimmedTitle = documentSearchTerm.trim();
 
-    console.log(url);
+    if (requestStatus && requestStatus != "all")
+      params.append("status", requestStatus);
+    if (trimmedTitle) params.append("documentTitle", trimmedTitle);
+
+    if (documentType && documentType != "all")
+      params.append("documentType", documentType);
+    if (clientName && clientName != "all")
+      params.append("clientName", clientName);
+    if (priority && priority != "all") params.append("priority", priority);
+
+    const url = `/api/review-requests?${params.toString()}`;
 
     fetch(url)
       .then((res) => {
@@ -40,7 +78,7 @@ export default function ReviewsPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [requestStatus]);
+  }, [requestStatus, documentSearchTerm, documentType, clientName, priority]);
 
   return (
     <main className="container mx-auto p-4">
@@ -53,70 +91,52 @@ export default function ReviewsPage() {
 
       <div>
         <h2 className="text-xl font-semibold mb-4">All Review Requests</h2>
-
-        <div className="mb-4 ">
-          <label htmlFor="statusFilter" className="mr-2 font-medium">
-            Filter by status:
-          </label>
-          <Select value={requestStatus} onValueChange={setRequestStatus}>
-            <SelectTrigger>
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in review">In Review</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mb-4">
+          <input
+            type="text"
+            id="search"
+            value={documentSearchTerm}
+            onChange={(e) => setDocumentSearchTerm(e.target.value)}
+            placeholder="Search documents..."
+            className="w-full border rounded px-3 py-2"
+          />
         </div>
 
-        <div>
-          {isLoading && (
-            <p className="text-gray-600">Loading review requests...</p>
-          )}
-          {error && <p className="text-red-500">Error: {error}</p>}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-4">
+          <FilterDropdown
+            label="Client Name"
+            value={clientName}
+            options={distinctClientNames}
+            onChange={setClientName}
+          />
 
-          {!isLoading && !error && (
-            <div className="bg-white border p-4 rounded-md overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
-                <thead className="border-b font-semibold">
-                  <tr>
-                    <th className="p-2">Client</th>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Type</th>
-                    <th className="p-2">Priority</th>
-                    <th className="p-2">Due Date</th>
-                    <th className="p-2">Status</th>
-                    <th className="p-2">Created at</th>
-                    <th className="p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reviewRequestData.map((r) => (
-                    <tr key={r.id} className="border-b">
-                      <td className="p-2">{r.clientName}</td>
-                      <td className="p-2">{r.documentTitle}</td>
-                      <td className="p-2">{r.documentType}</td>
-                      <td className="p-2">{r.priority}</td>
-                      <td className="p-2">{r.dueDate}</td>
-                      <td className="p-2">{r.status}</td>
-                      <td className="p-2">{r.createdAt}</td>
-                      <td className="p-2">
-                        <Button className="m-1" variant="outline">
-                          View
-                        </Button>{" "}
-                        <Button className="m-1" variant="outline">
-                          Edit
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <FilterDropdown
+            label="Document Type"
+            value={documentType}
+            options={distinctDocumentTypes}
+            onChange={setDocumentType}
+          />
+
+          <FilterDropdown
+            label="Priority"
+            value={priority}
+            options={priorities}
+            onChange={setPriority}
+          />
+
+          <FilterDropdown
+            label="Status"
+            value={requestStatus}
+            options={statuses}
+            onChange={setRequestStatus}
+          />
         </div>
+        <ReviewRequestsTable
+          data={reviewRequestData}
+          searchTerm={documentSearchTerm}
+          isLoading={isLoading}
+          error={error}
+        />
       </div>
     </main>
   );
