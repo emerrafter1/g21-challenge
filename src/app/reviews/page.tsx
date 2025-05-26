@@ -44,6 +44,8 @@ export default function ReviewsPage() {
     new Set(allReviewRequests.map((item) => item.clientName))
   );
 
+  const trimmedTitle = documentSearchTerm.trim();
+
   useEffect(() => {
     setIsLoading(true);
 
@@ -51,7 +53,8 @@ export default function ReviewsPage() {
 
     if (requestStatus && requestStatus != "all")
       params.append("status", requestStatus);
-    if (documentSearchTerm) params.append("documentTitle", documentSearchTerm);
+    if (trimmedTitle) params.append("documentTitle", trimmedTitle);
+    
     if (documentType && documentType != "all")
       params.append("documentType", documentType);
     if (clientName && clientName != "all")
