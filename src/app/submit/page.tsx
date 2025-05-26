@@ -23,7 +23,7 @@ const FormDataSchema = z.object({
   priority: z.enum(["Low", "Medium", "High"]),
   dueDate: z.string(),
   notes: z.string(),
-  file: z.instanceof(File),
+  
 });
 
 export default function SubmitPage() {
@@ -39,15 +39,21 @@ export default function SubmitPage() {
     file: null,
   });
 
-  function handleChange(e: any) {
-    const { name, value, type, files } = e.target;
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    const target = e.target as HTMLInputElement;
+    const { name, value, type, files } = target;
+  
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "file" ? files[0] : value,
+      [name]: type === "file" ? files?.[0] ?? null : value,
     }));
   }
+  
+  
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const formDataCheck = FormDataSchema.safeParse(formData);

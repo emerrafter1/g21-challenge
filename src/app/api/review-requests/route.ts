@@ -50,7 +50,7 @@ export function GET(request: NextRequest) {
     return NextResponse.json(filteredData);
   } catch (err) {
     return NextResponse.json(
-      { error: "Failed to load review requests" },
+      { error: `${err} : Failed to load review requests` },
       { status: 500 }
     );
   }
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    let newId = String(SAMPLE_REVIEW_REQUESTS.length + 1);
+    const newId = String(SAMPLE_REVIEW_REQUESTS.length + 1);
 
     const newRequest = {
       id: newId,
@@ -87,6 +87,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newRequest, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 500 });
+    return NextResponse.json({ error: `Invalid request: ${err}` }, { status: 500 });
   }
 }
