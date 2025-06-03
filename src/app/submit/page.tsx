@@ -11,6 +11,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { SAMPLE_CLIENTS } from "@/data/sample-data";
 
 const FormDataSchema = z.object({
   clientName: z.string(),
@@ -23,7 +24,6 @@ const FormDataSchema = z.object({
   priority: z.enum(["Low", "Medium", "High"]),
   dueDate: z.string(),
   notes: z.string(),
-  
 });
 
 export default function SubmitPage() {
@@ -44,14 +44,12 @@ export default function SubmitPage() {
   ) {
     const target = e.target as HTMLInputElement;
     const { name, value, type, files } = target;
-  
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "file" ? files?.[0] ?? null : value,
     }));
   }
-  
-  
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -125,13 +123,18 @@ export default function SubmitPage() {
 
               <SelectContent>
                 <SelectItem value="test">Select client</SelectItem>
+                {SAMPLE_CLIENTS.map((client) => (
+                  <SelectItem value={client}>{client}</SelectItem>
+                ))}
+
+                {/* 
                 <SelectItem value="Acme Financial">Acme Financial</SelectItem>
                 <SelectItem value="Birch Investments">
                   Birch Investments
                 </SelectItem>
                 <SelectItem value="Coral Capital Management">
                   Coral Capital Management
-                </SelectItem>
+                </SelectItem> */}
               </SelectContent>
             </Select>
           </div>

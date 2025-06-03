@@ -9,43 +9,49 @@ export function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status")?.toLowerCase();
-    const documentTitle = searchParams.get("documentTitle")?.trim().toLowerCase();
+    const documentSearch = searchParams
+      .get("documentSearch")
+      ?.trim()
+      .toLowerCase();
+    const clientSearch = searchParams.get("clientSearch")?.trim().toLowerCase();
     const documentType = searchParams.get("documentType")?.toLowerCase();
     const clientName = searchParams.get("clientName")?.toLowerCase();
     const priority = searchParams.get("priority")?.toLowerCase();
-    
 
     let filteredData = SAMPLE_REVIEW_REQUESTS;
 
     if (statusFilter) {
-        filteredData = filteredData.filter(
-          (item) => item.status.toLowerCase() === statusFilter
+      filteredData = filteredData.filter(
+        (item) => item.status.toLowerCase() === statusFilter
+      );
+    }
+
+    if (documentSearch) {
+      filteredData = filteredData.filter((item) => {
+        return (
+          item.documentTitle.toLowerCase().includes(documentSearch) ||
+          item.clientName.toLowerCase().includes(documentSearch)
         );
-      }
-      
-      if (documentTitle) {
-        filteredData = filteredData.filter((item) =>
-          item.documentTitle.toLowerCase().includes(documentTitle)
-        );
-      }
-      
-      if (documentType) {
-        filteredData = filteredData.filter(
-          (item) => item.documentType.toLowerCase() === documentType
-        );
-      }
-      
-      if (clientName) {
-        filteredData = filteredData.filter(
-          (item) => item.clientName.toLowerCase() === clientName
-        );
-      }
-      
-      if (priority) {
-        filteredData = filteredData.filter(
-          (item) => item.priority.toLowerCase() === priority
-        );
-      }
+      });
+    }
+
+    if (documentType) {
+      filteredData = filteredData.filter(
+        (item) => item.documentType.toLowerCase() === documentType
+      );
+    }
+
+    if (clientName) {
+      filteredData = filteredData.filter(
+        (item) => item.clientName.toLowerCase() === clientName
+      );
+    }
+
+    if (priority) {
+      filteredData = filteredData.filter(
+        (item) => item.priority.toLowerCase() === priority
+      );
+    }
 
     return NextResponse.json(filteredData);
   } catch (err) {
@@ -87,6 +93,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newRequest, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: `Invalid request: ${err}` }, { status: 500 });
+    return NextResponse.json(
+      { error: `Invalid request: ${err}` },
+      { status: 500 }
+    );
   }
 }

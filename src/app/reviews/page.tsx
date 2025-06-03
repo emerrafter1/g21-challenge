@@ -54,7 +54,10 @@ export default function ReviewsPage() {
 
     if (requestStatus && requestStatus != "all")
       params.append("status", requestStatus);
-    if (trimmedTitle) params.append("documentTitle", trimmedTitle);
+
+    if (trimmedTitle) params.append("documentSearch", trimmedTitle);
+ 
+
 
     if (documentType && documentType != "all")
       params.append("documentType", documentType);
